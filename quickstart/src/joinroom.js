@@ -9,12 +9,54 @@ const $activeParticipant = $('div#active-participant > div.participant.main', $r
 const $activeVideo = $('video', $activeParticipant);
 const $participants = $('div#participants', $room);
 
+const { takeSnapshot } = require('./helpers/snapshothelper')
+const { setupReconnectionUpdates } = require('./helpers/connectionstateshelper')
+const { handleLocalParticipantReconnectionUpdates, handleRemoteParticipantReconnectionUpdates } = require('./helpers/rpcstatushelper');
+const { showSnackBar } = require('./helpers/snackbar');
+const { setupDataTrackChat, updateMessageUI } = require('./helpers/datatrackhelper');
+const { applyFilter, removeFilter } = require('./helpers/filterhelper');
+const { muteYourAudio, unmuteYourAudio, muteYourVideo, unmuteYourVideo } = require('./helpers/trackscontrolhelper');
+
+const { LocalDataTrack } = require(`twilio-video`);
+const dataTrack = new LocalDataTrack();
+
 // The current active Participant in the Room.
 let activeParticipant = null;
 
 // Whether the user has selected the active Participant by clicking on
 // one of the video thumbnails.
 let isActiveParticipantPinned = false;
+
+/*-------------------- Start Take Snapshot --------------------------*/
+var snapshotBtn = document.getElementById('takesnapshot');
+snapshotBtn.onclick = function() {
+  takeSnapshot(window.room);
+};
+/*-------------------- End Take Snapshot ---------------------------*/
+
+/*-------------------- Start Media Controls --------------------------*/
+var muteAudioBtn = document.querySelector('button#muteAudio');
+var muteVideoBtn = document.querySelector('button#muteVideo');
+
+muteAudioBtn.onclick = () => {
+  const mute = !muteAudioBtn.classList.contains('muted');
+  if(mute) {
+    muteYourAudio(room, muteAudioBtn);
+  }else{
+    unmuteYourAudio(room, muteAudioBtn);
+  }
+}
+
+muteVideoBtn.onclick = () => {
+  const mute = !muteVideoBtn.classList.contains('muted');
+  if(mute) {
+    muteYourVideo(room, muteVideoBtn);
+  }else{
+    unmuteYourVideo(room, muteVideoBtn);
+  }
+}
+/*-------------------- End Media Controls --------------------------*/
+
 
 /**
  * Set the active Participant's video.
@@ -122,16 +164,33 @@ function setVideoPriority(participant, priority) {
  */
 function attachTrack(track, participant) {
   // Attach the Participant's Track to the thumbnail.
+  if(track.kind === "data")
+    return;
   const $media = $(`div#${participant.sid} > ${track.kind}`, $participants);
   $media.css('opacity', '');
   track.attach($media.get(0));
 
-  // If the attached Track is a VideoTrack that is published by the active
-  // Participant, then attach it to the main video as well.
-  if (track.kind === 'video' && participant === activeParticipant) {
-    track.attach($activeVideo.get(0));
-    $activeVideo.css('opacity', '');
-  }
+  // // If the attached Track is a VideoTrack that is published by the active
+  // // Participant, then attach it to the main video as well.
+  // if (track.kind === 'video' && participant === activeParticipant) {
+  //   track.attach($activeVideo.get(0));
+  //   $activeVideo.css('opacity', '');
+  // }
+
+  // if(track.kind === "video"){
+  //   if(track.name === "screen"){
+  //     const $media = $(`div#${participant.sid}-${track.name} > ${track.kind}`, $participants);
+  //     $media.css('opacity', '');
+  //     track.attach($media.get(0));
+  //   }else{
+  //     const $media = $(`div#${participant.sid} > ${track.kind}`, $participants);
+  //   $media.css('opacity', '');
+  //   track.attach($media.get(0));
+  //   }
+  // }else if(track.kind === "data"){
+    // track.on('message', data => updateMessageUI(data, participant.identity));
+  // }
+
 }
 
 /**
@@ -175,6 +234,16 @@ function participantConnected(participant, room) {
   participant.on('trackPublished', publication => {
     trackPublished(publication, participant);
   });
+
+  participant.on('trackSubscribed', track => {
+    console.log(`Participant "${participant.identity}" added ${track.kind} Track ${track.sid}`);
+    if (track.kind === 'data') {
+      track.on('message', data => {
+        console.log(data);
+        updateMessageUI(data, participant.identity);
+      });
+    }
+  });
 }
 
 /**
@@ -212,7 +281,8 @@ function trackPublished(publication, participant) {
 
   // Once the TrackPublication is unsubscribed from, detach the Track from the DOM.
   publication.on('unsubscribed', track => {
-    detachTrack(track, participant);
+    if(track.kind != 'data')
+      detachTrack(track, participant);
   });
 }
 
@@ -229,27 +299,72 @@ async function joinRoom(token, connectOptions) {
   // Join to the Room with the given AccessToken and ConnectOptions.
   const room = await connect(token, connectOptions);
 
+  await room.localParticipant.publishTrack(dataTrack);
+
+  const dataTrackPublished = {};
+
+  dataTrackPublished.promise = new Promise((resolve, reject) => {
+    dataTrackPublished.resolve = resolve;
+    dataTrackPublished.reject = reject;
+  });
+
+  room.localParticipant.on('trackPublished', publication => {
+    if (publication.track.kind === "data") {
+      dataTrackPublished.resolve();
+      console.log("Data Track")
+    }
+  });
+
+  room.localParticipant.on('trackPublicationFailed', (error, track) => {
+    if (track.kind === "data") {
+      dataTrackPublished.reject(error);
+      console.log("Data failed")
+
+    }
+  });
+
+  setupDataTrackChat(dataTrack);
+
   // Save the LocalVideoTrack.
-  let localVideoTrack = Array.from(room.localParticipant.videoTracks.values())[0].track;
+  let localVideoTrack = Array.from(room.localParticipant.videoTracks.values())[0].track;  
 
   // Make the Room available in the JavaScript console for debugging.
   window.room = room;
+  document.getElementById('message').innerHTML = 'Connected to Room : ' + room.name;
+
+  setupReconnectionUpdates(room);
+
+  handleRemoteParticipantReconnectionUpdates(room);
+  handleLocalParticipantReconnectionUpdates(room);
+
+  var blackAndWhite = document.querySelector('button#dropdown-blackAndWhite');
+  var blur = document.querySelector('button#dropdown-blur');
+  var image = document.querySelector('button#dropdown-image');
+
+  var noFilter = document.querySelector('button#dropdown-nofilter');
+  blackAndWhite.onclick = () => applyFilter(localVideoTrack, 'blackAndwhite');
+  blur.onclick = () => applyFilter(localVideoTrack, 'blur');
+  image.onclick = () => applyFilter(localVideoTrack, 'image');
+  noFilter.onclick = () => removeFilter(localVideoTrack);
 
   // Handle the LocalParticipant's media.
   participantConnected(room.localParticipant, room);
 
   // Subscribe to the media published by RemoteParticipants already in the Room.
   room.participants.forEach(participant => {
+    showSnackBar(participant.identity + ": " + participant.state);
     participantConnected(participant, room);
   });
 
   // Subscribe to the media published by RemoteParticipants joining the Room later.
   room.on('participantConnected', participant => {
+    showSnackBar(participant.identity + ": " + participant.state);
     participantConnected(participant, room);
   });
 
   // Handle a disconnected RemoteParticipant.
   room.on('participantDisconnected', participant => {
+    showSnackBar(participant.identity + ": " + participant.state);
     participantDisconnected(participant, room);
   });
 

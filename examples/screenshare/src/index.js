@@ -18,7 +18,7 @@ const remoteScreenPreview = document.querySelector('video.remote-screenpreview')
   pre.innerHTML = Prism.highlight(snippet, Prism.languages.javascript);
 
   const logger = Video.Logger.getLogger('twilio-video');
-  logger.setLevel('silent');
+  logger.setLevel('debug');
 
   // Connect Local Participant (screen-sharer) to a room
   const localCreds = await getRoomCredentials();

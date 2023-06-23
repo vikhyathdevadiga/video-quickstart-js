@@ -12,6 +12,8 @@ const switchOff = helpers.switchOff;
 const setRenderDimensions = helpers.setRenderDimensions;
 
 const renderDimensionsOption = document.querySelector('select#renderDimensionsOption');
+//Media Container Reszie functionality was not implemeted by default
+const mediaContainer = document.querySelector('div#media-container');
 const switchOnBtn = document.querySelector('button#switchOn');
 const switchOffBtn = document.querySelector('button#switchOff');
 const videoEl = document.querySelector('video#remotevideo');
@@ -70,6 +72,7 @@ const handleIsSwitchedOff = (isTrackSwitchedOff) => {
   // Attach RemoteVideoTrack
   roomP1.on('trackSubscribed', track => {
     if(track.kind === 'video') {
+      remoteVideoTrack = track;
       track.attach(videoEl);
       handleIsSwitchedOff(track.isSwitchedOff);
       stopVideoBitrateGraph = startVideoBitrateGraph(roomP1, 1000);
@@ -106,6 +109,9 @@ const handleIsSwitchedOff = (isTrackSwitchedOff) => {
   // Set Render Dimensions.
   renderDimensionsOption.addEventListener('change', () => {
     const renderDimensions = renderDimensionsObj[renderDimensionsOption.value];
+    //Set the dimensions when the selection changes
+    mediaContainer.style.height = `${renderDimensions.height}px`;
+    mediaContainer.style.width = `${renderDimensions.width}px`;
     setRenderDimensions(remoteVideoTrack, { renderDimensions });
   });
 

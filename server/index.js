@@ -64,7 +64,7 @@ app.get('/', (request, response) => {
  * parameter.
  */
 app.get('/token', function(request, response) {
-  const { identity } = request.query;
+  const useridentity = request.query.identity;
 
   // Create an access token which we will sign and return to the client,
   // containing the grant we just created.
@@ -72,11 +72,9 @@ app.get('/token', function(request, response) {
     process.env.TWILIO_ACCOUNT_SID,
     process.env.TWILIO_API_KEY,
     process.env.TWILIO_API_SECRET,
+    {identity: useridentity},
     { ttl: MAX_ALLOWED_SESSION_DURATION }
   );
-
-  // Assign the generated identity to the token.
-  token.identity = identity;
 
   // Grant the access token Twilio Video capabilities.
   const grant = new VideoGrant();
