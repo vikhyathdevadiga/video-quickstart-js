@@ -15,6 +15,7 @@ const { handleLocalParticipantReconnectionUpdates, handleRemoteParticipantReconn
 const { showSnackBar } = require('./helpers/snackbar');
 const { setupDataTrackChat, updateMessageUI } = require('./helpers/datatrackhelper');
 const { applyFilter, removeFilter } = require('./helpers/filterhelper');
+const { shareScreenHandler } = require('./helpers/screensharehelper');
 const { muteYourAudio, unmuteYourAudio, muteYourVideo, unmuteYourVideo } = require('./helpers/trackscontrolhelper');
 
 const { LocalDataTrack } = require(`twilio-video`);
@@ -33,6 +34,17 @@ snapshotBtn.onclick = function() {
   takeSnapshot(window.room);
 };
 /*-------------------- End Take Snapshot ---------------------------*/
+
+
+/*-------------------- Start Screen Share --------------------------*/
+
+var screenShareBtn = document.getElementById('screenShare');
+screenShareBtn.onclick = function() {
+  shareScreenHandler(window.room, screenShareBtn);
+};
+
+/*-------------------- End Screen Share ---------------------------*/
+
 
 /*-------------------- Start Media Controls --------------------------*/
 var muteAudioBtn = document.querySelector('button#muteAudio');
@@ -312,6 +324,8 @@ async function joinRoom(token, connectOptions) {
     if (publication.track.kind === "data") {
       dataTrackPublished.resolve();
       console.log("Data Track")
+    }else{
+      trackPublished(publication, room.localParticipant);
     }
   });
 
@@ -373,7 +387,8 @@ async function joinRoom(token, connectOptions) {
 
   // Update the active Participant when changed, only if the user has not
   // pinned any particular Participant as the active Participant.
-  room.on('dominantSpeakerChanged', () => {
+  room.on('dominantSpeakerChanged', participant => {
+    showSnackBar("Dominant Speaker is : " + participant.identity);
     if (!isActiveParticipantPinned) {
       setCurrentActiveParticipant(room);
     }
