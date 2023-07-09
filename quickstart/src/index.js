@@ -99,6 +99,9 @@ async function selectAndJoinRoom(error = null) {
     // Added Codec preferences
     connectOptions.preferredAudioCodecs = $('#preferredaudiocodec').find(":selected").val()? [$('#preferredaudiocodec').find(":selected").val()] : [];
     connectOptions.preferredVideoCodecs = $('#preferredvideocodec').find(":selected").val()? [$('#preferredvideocodec').find(":selected").val()]: [];
+
+    connectOptions.maxAudioBitrate = $('#maxaudiobitrate').find(":selected").val()? [$('#maxaudiobitrate').find(":selected").val()] : null;
+    connectOptions.maxVideoBitrate = $('#maxvideobitrate').find(":selected").val()? [$('#maxvideobitrate').find(":selected").val()] : null;
     
     // Add the specified video device ID to ConnectOptions.
     connectOptions.video.deviceId = { exact: deviceIds.video };
