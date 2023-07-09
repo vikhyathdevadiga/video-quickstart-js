@@ -43,9 +43,6 @@ const connectOptions = {
   // using Peer-to-Peer Rooms, so you can comment this line.
   // preferredVideoCodecs: [{ codec: 'VP8', simulcast: true }],
 
-  // preferredAudioCodecs: $('#preferredaudiocodec').find(":selected").val()? [$('#preferredaudiocodec').find(":selected").val()] : [],
-  // preferredVideoCodecs: $('#preferredvideocodec').find(":selected").val()? [$('#preferredvideocodec').find(":selected").val()]: [],
-
   // Capture 720p video @ 24 fps.
   video: { height: 720, frameRate: 24, width: 1280 }
 };
