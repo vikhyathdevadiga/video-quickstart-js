@@ -160,6 +160,28 @@
                   <label id="screen-name-label" for="screen-name">User Name</label>
                   <input id="screen-name" class="form-control" type="text" />
                 </div>
+
+                <div class="form-group">
+                  <label class="form-text text-muted">Audio Codec</label>
+                  <select id="preferredaudiocodec" name="preferredaudiocodec" class="form-control">
+                    <option value="">No preference</option>
+                    <option value="isac">ISAC</option>
+                    <option value="opus">Opus</option>
+                    <option value="PCMA">PCMA</option>
+                    <option value="PCMU">PCMU</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-text text-muted">Video Codec</label>
+                  <select id="preferredvideocodec" name="preferredvideocodec" class="form-control">
+                    <option value="">No preference</option>
+                    <option value="H264">H264</option>
+                    <option value="VP8">VP8</option>
+                    <option value="VP9">VP9</option>
+                  </select>
+                </div>
+
                 <div class="alert alert-warning" role="alert">
                 </div>
               </div>

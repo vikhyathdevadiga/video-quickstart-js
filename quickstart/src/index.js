@@ -41,7 +41,10 @@ const connectOptions = {
   // to adapt your encoded video quality for each RemoteParticipant based on
   // their individual bandwidth constraints. This has no utility if you are
   // using Peer-to-Peer Rooms, so you can comment this line.
-  preferredVideoCodecs: [{ codec: 'VP8', simulcast: true }],
+  // preferredVideoCodecs: [{ codec: 'VP8', simulcast: true }],
+
+  // preferredAudioCodecs: $('#preferredaudiocodec').find(":selected").val()? [$('#preferredaudiocodec').find(":selected").val()] : [],
+  // preferredVideoCodecs: $('#preferredvideocodec').find(":selected").val()? [$('#preferredvideocodec').find(":selected").val()]: [],
 
   // Capture 720p video @ 24 fps.
   video: { height: 720, frameRate: 24, width: 1280 }
@@ -93,6 +96,10 @@ async function selectAndJoinRoom(error = null) {
     // Add the specified Room name to ConnectOptions.
     connectOptions.name = roomName;
 
+    // Added Codec preferences
+    connectOptions.preferredAudioCodecs = $('#preferredaudiocodec').find(":selected").val()? [$('#preferredaudiocodec').find(":selected").val()] : [];
+    connectOptions.preferredVideoCodecs = $('#preferredvideocodec').find(":selected").val()? [$('#preferredvideocodec').find(":selected").val()]: [];
+    
     // Add the specified video device ID to ConnectOptions.
     connectOptions.video.deviceId = { exact: deviceIds.video };
 
